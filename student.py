@@ -39,19 +39,12 @@ class BlockWorldHeuristic(BlockWorld):
             if (set[0] in to_be_found_next.values()):
                 priority -= 0.1
 
-
-
         what, where = action
         to_the_ground = where == 0
 
         if (not to_the_ground):
             if (where not in in_right_place or what not in in_right_place):
                 priority += 0.5
-
-
-
-
-
 
         return priority
 
@@ -60,29 +53,35 @@ class AStar():
     def search(self, start, goal):
         opened = PriorityQueue()
         closed = dict()
+        costs = dict()
 
         opened.put((0, start, None, None))
 
         while not opened.empty():
             priority, state, prev_state, prev_action = opened.get()
 
+            if (priority < 0):
+                priority = 0
+
             if goal.__eq__(state):
                 closed[state] = prev_action, prev_state
                 return self.reconstruct_path(closed, start, state)
 
-            if state in closed:  # State already visited ...
-                continue
+            # if state in closed:  # State already visited ...
+            #     continue
             else:
                 closed[state] = prev_action, prev_state
 
             for action in state.get_actions():
                 next_state = state.clone()
                 next_state.apply(action)
+                old_cost = costs.get(next_state, 0)
+                costs[next_state] = costs.get(next_state, 0) + 1
 
-                if next_state in closed:
+                if next_state in closed and costs[next_state] > old_cost:
                     continue
 
-                new_priority = priority + next_state.heuristic(goal, action) + 1
+                new_priority = next_state.heuristic(goal, action) + costs[next_state]
 
 
 
