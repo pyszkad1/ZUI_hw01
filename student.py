@@ -10,41 +10,38 @@ class BlockWorldHeuristic(BlockWorld):
     def __init__(self, num_blocks=5, state=None):
         BlockWorld.__init__(self, num_blocks, state)
 
-    def heuristic(self, goal, action):
+    def heuristic(self, goal):
         priority = 0.
 
         self_state = self.get_state()
         goal_state = goal.get_state()
 
-        in_right_place = []
-        to_be_found_next = dict()
-
-        for goal_set in goal_state:
-            to_be_found_next[goal_set] = goal_set[-1]
-
         for set in self_state:
-            for goal_set in goal_state:
-                for i in range(len(goal_set)):
-                    if (i >= len(set)): break
-                    if (goal_set[-1 - i] == set[-1 - i]):
-                        in_right_place.append(goal_set[-1 - i])
-                        try:
-                            to_be_found_next[goal_set] = goal_set[-1 - i - 1]
-                        except:
-                            to_be_found_next[goal_set] = None
+            # for each block in the set
+            for i in reversed(range(len(set))):
+                box_number = len(set) - 1 - i
 
-                        priority -= 1
+                for goal_set in goal_state:
+                    already_one_correct = False
+                    for j in range(len(goal_set)):
+                        if j > box_number:
+                            break
+                        if (box_number == 0 and set[-1 - box_number] != goal_set[-1 - j]):
+                            priority += 1
+                            break
 
-        for set in self_state:
-            if (set[0] in to_be_found_next.values()):
-                priority -= 0.1
+                        if (box_number == j and set[-1 - box_number] != goal_set[-1 - j]):
+                            priority += 2
+                            break
 
-        what, where = action
-        to_the_ground = where == 0
-
-        if (not to_the_ground):
-            if (where not in in_right_place or what not in in_right_place):
-                priority += 0.5
+                        if set[-1 - j] != goal_set[-1 - j]:
+                            if already_one_correct:
+                                priority += 2
+                            else:
+                                priority += 1
+                            break
+                        else:
+                            already_one_correct = True
 
         return priority
 
@@ -53,39 +50,32 @@ class AStar():
     def search(self, start, goal):
         opened = PriorityQueue()
         closed = dict()
-        costs = dict()
 
-        opened.put((0, start, None, None))
+        opened.put((0, start, None, None, 0))
 
         while not opened.empty():
-            priority, state, prev_state, prev_action = opened.get()
-
-            if (priority < 0):
-                priority = 0
+            priority, state, prev_state, prev_action, cost = opened.get()
 
             if goal.__eq__(state):
                 closed[state] = prev_action, prev_state
                 return self.reconstruct_path(closed, start, state)
 
-            # if state in closed:  # State already visited ...
-            #     continue
+            if state in closed:  # State already visited ...
+                continue
+
             else:
                 closed[state] = prev_action, prev_state
 
             for action in state.get_actions():
                 next_state = state.clone()
                 next_state.apply(action)
-                old_cost = costs.get(next_state, 0)
-                costs[next_state] = costs.get(next_state, 0) + 1
 
-                if next_state in closed and costs[next_state] > old_cost:
+                if (next_state in closed):
                     continue
 
-                new_priority = next_state.heuristic(goal, action) + costs[next_state]
+                new_priority = next_state.heuristic(goal) + cost
 
-
-
-                opened.put((new_priority, next_state, state, action))
+                opened.put((new_priority, next_state, state, action, cost+1))
 
         return []
 
@@ -102,7 +92,7 @@ class AStar():
 
 if __name__ == '__main__':
     # Here you can test your algorithm. You can try different N values, e.g. 6, 7.
-    N = 6
+    N = 3
 
     start = BlockWorldHeuristic(N)
     goal = BlockWorldHeuristic(N)
