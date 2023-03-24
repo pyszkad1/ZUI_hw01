@@ -10,7 +10,7 @@ class BlockWorldHeuristic(BlockWorld):
     def __init__(self, num_blocks=5, state=None):
         BlockWorld.__init__(self, num_blocks, state)
 
-    def heuristic(self, goal):
+    def heuristic(self, goal, action):
         priority = 0.
 
         self_state = self.get_state()
@@ -35,14 +35,23 @@ class BlockWorldHeuristic(BlockWorld):
 
                         priority -= 1
 
-        found_next_to_be_moved = False
         for set in self_state:
             if (set[0] in to_be_found_next.values()):
-                found_next_to_be_moved = True
-                priority -= 0.5
+                priority -= 0.1
 
-        if (not found_next_to_be_moved):
-            priority += 1
+
+
+        what, where = action
+        to_the_ground = where == 0
+
+        if (not to_the_ground):
+            if (where not in in_right_place or what not in in_right_place):
+                priority += 0.5
+
+
+
+
+
 
         return priority
 
@@ -73,7 +82,9 @@ class AStar():
                 if next_state in closed:
                     continue
 
-                new_priority = priority + next_state.heuristic(goal) + 1
+                new_priority = priority + next_state.heuristic(goal, action) + 1
+
+
 
                 opened.put((new_priority, next_state, state, action))
 
