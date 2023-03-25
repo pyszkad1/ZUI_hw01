@@ -1,7 +1,7 @@
 from blockworld import BlockWorld
 from queue import PriorityQueue
 from typing import List, Tuple, Dict
-from copy import deepcopy
+import numpy as np
 
 Action = Tuple[str, str]
 
@@ -22,34 +22,50 @@ class BlockWorldHeuristic(BlockWorld):
                 box_number = len(set) - 1 - i
 
                 for goal_set in goal_state:
-                    already_one_correct = False
-                    for j in range(len(goal_set)):
-                        if j > box_number:
-                            break
-                        if (box_number == 0 and set[-1 - box_number] != goal_set[-1 - j]):
-                            priority += 1
-                            break
-
-                        if (box_number == j and set[-1 - box_number] != goal_set[-1 - j]):
-                            priority += 2
-                            break
-
-                        if set[-1 - j] != goal_set[-1 - j]:
-                            if already_one_correct:
-                                priority += 2
-                            else:
+                    if (set[i] in goal_set):
+                        already_one_correct = False
+                        for j in range(len(goal_set)):
+                            if j > box_number:
+                                break
+                            if (box_number == 0 and set[-1 - box_number] != goal_set[-1 - j]):
                                 priority += 1
-                            break
-                        else:
-                            already_one_correct = True
+                                break
+
+                            if (box_number == j and set[-1 - box_number] != goal_set[-1 - j]):
+                                priority += 2
+                                break
+
+                            if set[-1 - j] != goal_set[-1 - j]:
+                                if already_one_correct:
+                                    priority += 2
+                                else:
+                                    priority += 1
+                                break
+                            elif (j == 0):
+                                already_one_correct = True
 
         return priority
 
 
 class AStar():
+
+    # def to_string(self, state):
+    #     ret = "["
+    #     for i in range(len(state.state)):
+    #         ret += "["
+    #         for j in range(len(state.state[i])):
+    #             ret += str(state.state[i][j])
+    #             if j != len(state.state[i]) - 1:
+    #                 ret += ", "
+    #         ret += "], "
+    #     ret += "]"
+    #     return ret
+
     def search(self, start, goal):
         opened = PriorityQueue()
         closed = dict()
+
+        num_of_blocks = len(start.get_state())
 
         opened.put((0, start, None, None, 0))
 
@@ -67,6 +83,9 @@ class AStar():
                 closed[state] = prev_action, prev_state
 
             for action in state.get_actions():
+
+
+                #next_state = BlockWorldHeuristic(num_of_blocks, self.to_string(state))
                 next_state = state.clone()
                 next_state.apply(action)
 
@@ -92,7 +111,7 @@ class AStar():
 
 if __name__ == '__main__':
     # Here you can test your algorithm. You can try different N values, e.g. 6, 7.
-    N = 3
+    N = 9
 
     start = BlockWorldHeuristic(N)
     goal = BlockWorldHeuristic(N)
